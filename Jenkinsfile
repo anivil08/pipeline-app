@@ -38,7 +38,7 @@ pipeline {
         stage('Remote Cluster Deployment') {
             steps {
                 echo '🚢 Injecting Blueprints into Remote Kubespray Nodes...'
-                sh "sed -i 's|DOCKERHUB_USERNAME/pipeline-app:IMAGE_TAG|${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}|g' k8s-deployment.yaml"
+                sh "sed -i 's|anivil08/pipeline-app:IMAGE_TAG|${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}|g' k8s-deployment.yaml"
                 
                 withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh "kubectl --kubeconfig=\$KUBECONFIG_FILE apply -f k8s-deployment.yaml"
