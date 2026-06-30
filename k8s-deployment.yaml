@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: web-container
-        image: DOCKERHUB_USERNAME/pipeline-app:IMAGE_TAG
+        image: anivil08/pipeline-app:IMAGE_TAG
         ports:
         - containerPort: 80
           name: http-port

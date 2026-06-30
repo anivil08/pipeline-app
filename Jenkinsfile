@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_REGISTRY_USER = 'your_dockerhub_username'
+        DOCKER_REGISTRY_USER = 'anivil08'
         REGISTRY_CREDENTIALS_ID = 'docker-hub-credentials'
         IMAGE_NAME = 'pipeline-app'
         IMAGE_TAG = "${BUILD_NUMBER}"
