@@ -25,6 +25,18 @@ spec:
         image: anivil08/pipeline-app:IMAGE_TAG
         ports:
         - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /       # If your app has a custom health endpoint (like /health), change this
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
           name: http-port
         resources:
           requests:
