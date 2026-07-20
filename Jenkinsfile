@@ -6,6 +6,7 @@ pipeline {
         REGISTRY_CREDENTIALS_ID = 'docker-hub-credentials'
         IMAGE_NAME = 'pipeline-app'
         IMAGE_TAG = "${BUILD_NUMBER}"
+        SONAR_SCANNER_HOME = tool 'SonarQubeScanner'
     }
     
     stages {
@@ -15,7 +16,29 @@ pipeline {
                 checkout scm
             }
         }
-        
+    stage('Security: Secret Detection') {
+            steps {
+                sh "trivy fs --scanners secret --exit-code 1 ."
+            }
+        }
+
+        stage('Security: SonarQube SAST') {
+            steps {
+                withSonarQubeEnv('SonarQubeServer') { 
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=pipeline-app -Dsonar.sources=. -Dsonar.exclusions=**/node_modules/**"
+                }
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Security: OWASP Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: "--scan ./ --failOnCVSS 7.0 --exclude **/node_modules/**", odcInstallation: 'OWASP-Dependency-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
         stage('Build Image') {
             steps {
                 echo '🛠️ Executing Docker Engine Container Build...'
@@ -23,7 +46,11 @@ pipeline {
                 sh "docker build -t ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:latest ."
             }
         }
-        
+        stage('Security: Trivy Container Scan') {
+            steps {
+                sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
         stage('Publish Image') {
             steps {
                 echo '🚀 Uploading Image to Central Registry...'
