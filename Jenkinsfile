@@ -35,10 +35,14 @@ pipeline {
 
         stage('Security: OWASP Dependency Check') {
             steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    dependencyCheck additionalArguments: '--scan ./ --failOnCVSS 7.0 -n --exclude "**/node_modules/**"', odcInstallation: 'OWASP-Dependency-Check'
-                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-                }
+                dependencyCheck(
+                    additionalArguments: '--scan ./ --format XML --out dependency-check-report --failOnCVSS 7.0 --noupdate --exclude "**/node_modules/**"',
+                    odcInstallation: 'OWASP-Dependency-Check'
+                )
+
+                dependencyCheckPublisher(
+                    pattern: 'dependency-check-report/dependency-check-report.xml'
+                )
             }
         }
         stage('Build Image') {
