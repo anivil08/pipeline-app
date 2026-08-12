@@ -36,7 +36,7 @@ pipeline {
         stage('Security: OWASP Dependency Check') {
             steps {
                 dependencyCheck(
-                    additionalArguments: '--scan ./ --format XML --out dependency-check-report --failOnCVSS 7.0 --noupdate --exclude "**/node_modules/**"',
+                    additionalArguments: '--scan ./ --format XML --out dependency-check-report --data /opt/dependency-check/data --noupdate --failOnCVSS 7.0 --exclude "**/node_modules/**"',
                     odcInstallation: 'OWASP-Dependency-Check'
                 )
 
