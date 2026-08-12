@@ -60,14 +60,14 @@ pipeline {
                       --format HTML \
                       --format JSON \
                       --format XML \
-                      --out dependency-check-report \
+                      --out "$(pwd)/dependency-check-report" \
                       --data /opt/dependency-check/data \
                       --noupdate \
                       --failOnCVSS 7 \
                       --exclude "**/node_modules/**"
 
                     echo "✅ OWASP Dependency-Check completed"
-                    echo "📄 Generated reports:"
+
                     ls -lh dependency-check-report/
                 }
             }
@@ -92,12 +92,12 @@ pipeline {
 
                 sh '''
                     docker build \
-                      -t ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG} \
+                      -t "$DOCKER_REGISTRY_USER/$IMAGE_NAME:$IMAGE_TAG" \
                       .
 
-                    docker build \
-                      -t ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:latest \
-                      .
+                    docker tag \
+                      "$DOCKER_REGISTRY_USER/$IMAGE_NAME:$IMAGE_TAG" \
+                      "$DOCKER_REGISTRY_USER/$IMAGE_NAME:latest"
                 '''
             }
         }
@@ -110,14 +110,14 @@ pipeline {
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --exit-code 1 \
-                      ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                      "$DOCKER_REGISTRY_USER/$IMAGE_NAME:$IMAGE_TAG"
                 '''
             }
         }
 
         stage('Publish Image') {
             steps {
-                echo '🚀 Uploading Image to Central Registry...'
+                echo '🚀 Uploading Image to Docker Hub...'
 
                 withCredentials([
                     usernamePassword(
@@ -134,10 +134,12 @@ pipeline {
                           --password-stdin
 
                         docker push \
-                          ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                          "$DOCKER_REGISTRY_USER/$IMAGE_NAME:$IMAGE_TAG"
 
                         docker push \
-                          ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:latest
+                          "$DOCKER_REGISTRY_USER/$IMAGE_NAME:latest"
+
+                        docker logout
                     '''
                 }
             }
@@ -149,7 +151,7 @@ pipeline {
 
                 sh '''
                     sed -i \
-                      "s|anivil08/pipeline-app:IMAGE_TAG|${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}|g" \
+                      "s|anivil08/pipeline-app:IMAGE_TAG|$DOCKER_REGISTRY_USER/$IMAGE_NAME:$IMAGE_TAG|g" \
                       k8s-deployment.yaml
                 '''
 
