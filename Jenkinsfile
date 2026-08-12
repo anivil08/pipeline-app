@@ -45,7 +45,7 @@ pipeline {
                              --failOnCVSS 7
                        '''
                    }
-
+             }
         stage('Build Image') {
             steps {
                 echo '🛠️ Executing Docker Engine Container Build...'
