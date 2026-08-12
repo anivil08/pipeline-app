@@ -33,7 +33,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeServer') {
                     sh '''
-                        ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                        "$SONAR_SCANNER_HOME/bin/sonar-scanner" \
                           -Dsonar.projectKey=pipeline-app \
                           -Dsonar.sources=. \
                           -Dsonar.exclusions=**/node_modules/**,dependency-check-report/**
@@ -60,7 +60,7 @@ pipeline {
                       --format HTML \
                       --format JSON \
                       --format XML \
-                      --out "$(pwd)/dependency-check-report" \
+                      --out dependency-check-report \
                       --data /opt/dependency-check/data \
                       --noupdate \
                       --failOnCVSS 7 \
@@ -69,7 +69,7 @@ pipeline {
                     echo "✅ OWASP Dependency-Check completed"
 
                     ls -lh dependency-check-report/
-                }
+                '''
             }
 
             post {
@@ -122,11 +122,10 @@ pipeline {
                 withCredentials([
                     usernamePassword(
                         credentialsId: "${REGISTRY_CREDENTIALS_ID}",
-                        passwordVariable: 'DOCKER_HUB_PASSWORD',
-                        usernameVariable: 'DOCKER_HUB_USERNAME'
+                        usernameVariable: 'DOCKER_HUB_USERNAME',
+                        passwordVariable: 'DOCKER_HUB_PASSWORD'
                     )
                 ]) {
-
                     sh '''
                         echo "$DOCKER_HUB_PASSWORD" | \
                           docker login \
@@ -161,7 +160,6 @@ pipeline {
                         variable: 'KUBECONFIG_FILE'
                     )
                 ]) {
-
                     sh '''
                         kubectl \
                           --kubeconfig="$KUBECONFIG_FILE" \
@@ -182,7 +180,6 @@ pipeline {
                         variable: 'KUBECONFIG_FILE'
                     )
                 ]) {
-
                     sh '''
                         kubectl \
                           --kubeconfig="$KUBECONFIG_FILE" \
@@ -198,7 +195,6 @@ pipeline {
     post {
         success {
             echo '✅ CI/CD Pipeline completed successfully!'
-            echo "🚀 Image: ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
         }
 
         failure {
