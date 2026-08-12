@@ -34,27 +34,30 @@ pipeline {
         }
 
         stage('Dependency Scan - OWASP') {
-    steps {
-        sh '''
-            rm -rf dependency-check-report
-            mkdir -p dependency-check-report
+            steps {
+                sh '''
+                    dependency-check.sh \
+                      --project "$IMAGE_NAME" \
+                      --scan . \
+                      --format HTML \
+                      --format JSON \
+                      --format XML \
+                      --out dependency-check-report \
+                      --data /opt/dependency-check/data \
+                      --noupdate \
+                      --failOnCVSS 7 \
+                      --exclude "**/node_modules/**"
+                '''
+            }
 
-            dependency-check.sh \
-              --project "$IMAGE_NAME" \
-              --scan . \
-              --format HTML \
-              --format XML \
-              --out dependency-check-report \
-              --data /opt/dependency-check/data \
-              --noupdate \
-              --failOnCVSS 7 \
-              --exclude "**/node_modules/**"
-        '''
-
-        archiveArtifacts artifacts: 'dependency-check-report/*',
-                         fingerprint: true
-    }
-}
+            post {
+                always {
+                    dependencyCheckPublisher(
+                        pattern: 'dependency-check-report/dependency-check-report.xml'
+                    )
+                }
+            }
+        }
         stage('Build Image') {
             steps {
                 echo '🛠️ Executing Docker Engine Container Build...'
